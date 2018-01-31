@@ -8,11 +8,12 @@ const int D = 3;
 using namespace std;
 
 void PrintMatrix(int a[BANK_COUNT][BANK_COUNT], int b[BANK_COUNT][BANK_COUNT]);
+void ParseLine(int lineCount, string fileLine, int &firstNum, int &secondNum);
 
 int main(int argc, char *argv[])
 {
-	int distance[BANK_COUNT] = { 1,3,4,6,10,11 };
-	int money_count[BANK_COUNT] = { 1,5,8,4,3,2 };
+	int distance[BANK_COUNT] = { 0 };//{ 1,3,4,6,10,11 };
+	int money_count[BANK_COUNT] = { 0 };//{ 1,5,8,4,3,2 };
 	int distance_matrix[BANK_COUNT][BANK_COUNT] = { 0 };
 	int max_sum_matrix[BANK_COUNT][BANK_COUNT] = { 0 };
 
@@ -22,12 +23,28 @@ int main(int argc, char *argv[])
 	
 	bool haveLine = false;
 	string line="";
+	int lineCount = 0;
+	int n = 0, dd = 0, k = 0;
+
 	do
 	{
+		int num1 = 0, num2 = 0;
 		if (getline(fin, line))
 		{
 			haveLine = true;
-			cout << line << endl;
+			lineCount++;
+			ParseLine(lineCount, line, num1, num2);
+			if (lineCount == 1)
+			{
+				n = num1;
+				dd = num2;
+			}
+			else
+			{
+				distance[k] = num1;
+				money_count[k] = num2;
+				k++;
+			}
 		}
 		else
 			haveLine = false;
@@ -98,4 +115,37 @@ void PrintMatrix(int a[BANK_COUNT][BANK_COUNT], int b[BANK_COUNT][BANK_COUNT])
 			cout << b[i][j] << ' ';
 		cout << endl;
 	}
+}
+
+void ParseLine(int lineCount, string fileLine, int &firstNum, int &secondNum)
+{
+	bool takeX = true, takeW = false;
+	string firstNumStr = "", secondNumStr = "";
+
+	for (int i = 0; i < fileLine.size(); i++)
+	{
+		if (fileLine[i] == ' ')
+		{
+			takeX = false;
+			takeW = true;
+			i++;
+		}
+
+		if (takeX==true)
+		{
+			firstNumStr += fileLine[i];
+		}
+		else if (takeW==true)
+		{
+			secondNumStr += fileLine[i];
+		}
+	}
+
+//	if (lineCount == 1)
+	{
+		//что будет если строка первая
+		firstNum = atoi(firstNumStr.c_str());
+		secondNum = atoi(secondNumStr.c_str());
+	}
+
 }
