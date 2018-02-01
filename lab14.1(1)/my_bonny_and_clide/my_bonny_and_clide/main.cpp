@@ -2,32 +2,35 @@
 #include <fstream>
 #include <string>
 
-const int MAX_BANK_COUNT = 20e5, MIN_BANK_COUNT = 2;
+const int MAX_BANK_COUNT = 2*10e5, MIN_BANK_COUNT = 2;
 const int MAX_D = 10e8, MIN_D = 1;
 
 using namespace std;
 
-void ReadFirstLine(ifstream &fin, int &num1, int &num2);
-void ReadOtherLines(ifstream &fin, int *distances, int *money_count);
+void ReadFirstLine(ifstream &fin, int &num1, int &num2, bool &haveError);
+void ReadOtherLines(ifstream &fin, int *distances, int *money_count, bool &haveError);
 void PrintMatrix(int **a, int **b, int n);
-void ParseLine(string fileLine, int &firstNum, int &secondNum);
+void ParseLine(string fileLine, int &firstNum, int &secondNum, bool &haveError);
 void SearchSolution(int **distance_matrix, int **max_sum_matrix, int n, int dist, char *name);
+void ErrorMessage(int code);
 
 int main(int argc, char *argv[])
 {
 	string inputFileName = argv[1];
 	ifstream fin(inputFileName);
 
+	bool haveErrors = false;
+
 	//обработка первой строки
 	int number1 = 0, number2 = 0;
-	ReadFirstLine(fin, number1, number2);
+	ReadFirstLine(fin, number1, number2, haveErrors);
 	int n = number1;
 	int dd = number2;
 	
 	//обработка остальных строк
 	int *pDistances = new int[n];
 	int *pMoneyCount = new int[n];
-	ReadOtherLines(fin, pDistances, pMoneyCount);
+	ReadOtherLines(fin, pDistances, pMoneyCount, haveErrors);
 	for (int j = 0; j < n; j++)
 	{
 		cout << pDistances[j] <<"  "<<pMoneyCount[j]<< endl;
@@ -61,8 +64,11 @@ int main(int argc, char *argv[])
 			}
 		}
 
-	SearchSolution(distance_matrix, max_sum_matrix, n, dd, argv[2]);
+	delete pDistances;
+	delete pMoneyCount;
 
+	//поиск решения
+	SearchSolution(distance_matrix, max_sum_matrix, n, dd, argv[2]);
 
 	//печать матриц денег и расстояний на экран
 	PrintMatrix(distance_matrix, max_sum_matrix, n);
@@ -71,14 +77,19 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void ReadFirstLine(ifstream &fin, int &num1, int &num2)
+void ReadFirstLine(ifstream &fin, int &num1, int &num2, bool &haveError)
 {
 	string line = "";
-	getline(fin, line);
-	ParseLine(line, num1, num2);
+	if (getline(fin, line))
+		ParseLine(line, num1, num2, haveError);
+	else
+	{
+		//ErrorMessage(1);
+		//haveError = true;
+	}
 }
 
-void ReadOtherLines(ifstream &fin, int *distances, int *money_count)
+void ReadOtherLines(ifstream &fin, int *distances, int *money_count, bool &haveError)
 {
 	bool haveLine = false;
 	int k = 0;
@@ -91,14 +102,22 @@ void ReadOtherLines(ifstream &fin, int *distances, int *money_count)
 		if (getline(fin, line))
 		{
 			haveLine = true;
-			ParseLine(line, num1, num2);
+			ParseLine(line, num1, num2, haveError);
 			distances[k] = num1;
 			money_count[k] = num2;
 			k++;
 		}
 		else
+		{
 			haveLine = false;
+			//haveError = true;
+			//ErrorMessage(1);
+			break;
+		}
+
 	} while (haveLine);
+	
+	fin.close();
 }
 
 
@@ -121,7 +140,7 @@ void PrintMatrix(int **a, int **b, int n)
 	}
 }
 
-void ParseLine(string fileLine, int &firstNum, int &secondNum)
+void ParseLine(string fileLine, int &firstNum, int &secondNum, bool &haveError)
 {
 	bool takeX = true, takeW = false;
 	string firstNumStr = "", secondNumStr = "";
@@ -130,21 +149,36 @@ void ParseLine(string fileLine, int &firstNum, int &secondNum)
 	{
 		if (fileLine[i] == ' ')
 		{
-			takeX = false;
-			takeW = true;
-			i++;
+			if (firstNumStr != "")
+			{
+				takeX = false;
+				takeW = true;
+				i++;
+			}
 		}
-
-		if (takeX==true)
-			firstNumStr += fileLine[i];
 		
-		else if (takeW==true)
-			secondNumStr += fileLine[i];
-		
+		if (takeX == true)
+		{
+			if (isdigit(fileLine[i]))
+			{
+				firstNumStr += fileLine[i];
+			}
+			else
+				haveError = true;
+		}
+		else if (takeW == true)
+		{
+			if (isdigit(fileLine[i]))
+				secondNumStr += fileLine[i];
+			else
+				haveError = true;
+		}
 	}
-
-		firstNum = atoi(firstNumStr.c_str());
-		secondNum = atoi(secondNumStr.c_str());
+		
+	firstNum = atoi(firstNumStr.c_str());
+	firstNumStr = "";
+	secondNum = atoi(secondNumStr.c_str());
+	secondNumStr = "";
 }
 
 void SearchSolution(int **distance_matrix, int **max_sum_matrix, int n, int dist, char *name)
@@ -178,6 +212,36 @@ void SearchSolution(int **distance_matrix, int **max_sum_matrix, int n, int dist
 		bank1 = max_i+1;
 		bank2 = max_j+1;
 	}
-	fout << max_sum_matrix[max_i][max_j]<<endl;
+	if (max_sum>0)
+		fout << max_sum<<endl;
 	fout << bank1 << "  " << bank2 << endl;
+
+	fout.close();
+}
+
+void ErrorMessage(int code)
+{
+	switch (code)
+	{
+		case 1:
+		{
+			cout << "File don't have the lines" << endl;
+			break;
+		}
+		case 2:
+		{	
+			cout << "Incorrect file structure" << endl;
+			break;
+		}
+		case 3:
+		{
+			cout << "Input file error" << endl;
+			break;
+		}
+		case 4:
+		{
+			cout << "Output file error" << endl;
+			break;
+		}
+	}
 }
