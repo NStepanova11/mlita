@@ -1,28 +1,156 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <climits>
 
-const int BANK_COUNT = 6;
-const int D = 3;
+const int MAX_BANK_COUNT = 20e5, MIN_BANK_COUNT = 2;
+const int MAX_D = 10e8, MIN_D = 1;
 
 using namespace std;
 
-void PrintMatrix(int a[BANK_COUNT][BANK_COUNT], int b[BANK_COUNT][BANK_COUNT]);
-void ParseLine(int lineCount, string fileLine, int &firstNum, int &secondNum);
+void ReadFirstLine(ifstream &fin, int &num1, int &num2);
+void ReadOtherLines(ifstream &fin, int *distances, int *money_count);
+
+//void ReadInputFile(char *fileName, int &dist[BANK_COUNT], int &money_sum[BANK_COUNT]);
+void PrintMatrix(int **a, int **b, int n);
+void ParseLine(string fileLine, int &firstNum, int &secondNum);
+
 
 int main(int argc, char *argv[])
 {
-	int distance[BANK_COUNT] = { 0 };//{ 1,3,4,6,10,11 };
-	int money_count[BANK_COUNT] = { 0 };//{ 1,5,8,4,3,2 };
-	int distance_matrix[BANK_COUNT][BANK_COUNT] = { 0 };
-	int max_sum_matrix[BANK_COUNT][BANK_COUNT] = { 0 };
-
-	//чтение данных из файла
-	string fileName=argv[1];
-	ifstream fin(fileName);
+	//int distance[BANK_COUNT] = { 0 };
+	//int money_count[BANK_COUNT] = { 0 };
 	
+
+
+	string inputFileName = argv[1];
+	ifstream fin(inputFileName);
+
+	//обработка первой строки
+	int number1 = 0, number2 = 0;
+	ReadFirstLine(fin, number1, number2);
+	int n = number1;
+	int dd = number2;
+	
+	//обработка остальных строк
+	int *pDistances = new int[n];
+	int *pMoneyCount = new int[n];
+	ReadOtherLines(fin, pDistances, pMoneyCount);
+	for (int j = 0; j < n; j++)
+	{
+		cout << pDistances[j] <<"  "<<pMoneyCount[j]<< endl;
+	}
+
+
+
+	//создаются матрицы с расстояниями между парами банков(distance) где расстояние >= допустимого
+	//и матрица общей суммы денег в паре банков
+	int **distance_matrix = new int *[n];
+	int **max_sum_matrix = new int *[n];
+
+	for (int i = 0; i < n; i++)
+	{
+		distance_matrix[i] = new int[n];
+		max_sum_matrix[i] = new int[n];
+	}
+
+	for (int i = 0; i<n; i++)
+		for (int j = 0; j < n; j++)
+		{
+			distance_matrix[i][j] = 0;
+			max_sum_matrix[i][j] = 0;
+		}
+
+	for(int i=0; i<n; i++)
+		for (int j=i+1; j < n; j++)
+		{
+			if (pDistances[j] - pDistances[i] >= dd)
+			{
+				distance_matrix[i][j] = pDistances[j] - pDistances[i];
+				max_sum_matrix[i][j] = pMoneyCount[i] + pMoneyCount[j];
+			}
+		}
+
+	//печать матриц денег и расстояний на экран
+		
+	PrintMatrix(distance_matrix, max_sum_matrix, n);
+	/*
+	int max_i = 0, max_j=0;
+	int max_sum = 0;
+
+	//поиск максимальной суммы денег и пары банков
+	for (int i = 0; i < BANK_COUNT; i++)
+	{
+		for (int j = 0; j < BANK_COUNT; j++)
+			if (max_sum_matrix[i][j]>max_sum)
+			{
+				max_sum = max_sum_matrix[i][j];
+				max_i = i;
+				max_j = j;
+			}
+	}
+
+	//результат работы программы: макс сумма и пара банков
+	int bank1 = 0, bank2 = 0;
+	string outputFileName = argv[2];
+	ofstream fout(outputFileName, ios_base::out);
+
+	if (distance_matrix[max_i][max_j] < dd)
+	{
+		bank1 = bank2 = -1;
+	}
+	else
+	{
+		bank1 = max_i+1;
+		bank2 = max_j+1;
+	}
+	fout << max_sum_matrix[max_i][max_j]<<endl;
+	fout << bank1 << "  " << bank2 << endl;
+
+
+	*/
+	system("pause");
+	return 0;
+}
+
+void ReadFirstLine(ifstream &fin, int &num1, int &num2)
+{
+	string line = "";
+	getline(fin, line);
+	ParseLine(line, num1, num2);
+}
+
+void ReadOtherLines(ifstream &fin, int *distances, int *money_count)
+{
 	bool haveLine = false;
-	string line="";
+	int k = 0;
+	int num1 = 0, num2 = 0;
+
+	do
+	{
+		string line = "";
+
+		if (getline(fin, line))
+		{
+			haveLine = true;
+			ParseLine(line, num1, num2);
+			distances[k] = num1;
+			money_count[k] = num2;
+			k++;
+		}
+		else
+			haveLine = false;
+	} while (haveLine);
+}
+
+/*
+void ReadInputFile(char *fileName, int &dist[BANK_COUNT], int &money_sum[BANK_COUNT])
+{
+	//чтение данных из файла 
+	
+
+	bool haveLine = false;
+	string line = "";
 	int lineCount = 0;
 	int n = 0, dd = 0, k = 0;
 
@@ -41,8 +169,8 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				distance[k] = num1;
-				money_count[k] = num2;
+				dist[k] = num1;
+				money_sum[k] = num2;
 				k++;
 			}
 		}
@@ -50,74 +178,29 @@ int main(int argc, char *argv[])
 			haveLine = false;
 	} while (haveLine);
 
-	
-	//создаются матрицы с расстояниями между парами банков(distance) где расстояние >= допустимого
-	//и матрица общей суммы денег в паре банков
-	for(int i=0; i<BANK_COUNT; i++)
-		for (int j=i+1; j < BANK_COUNT; j++)
-		{
-			if (distance[j] - distance[i] >= D)
-			{
-				distance_matrix[i][j] = distance[j] - distance[i];
-				max_sum_matrix[i][j] = money_count[i] + money_count[j];
-			}
-		}
-
-	//печать матриц денег и расстояний на экран
-	PrintMatrix(distance_matrix, max_sum_matrix);
-
-	int max_i = 0, max_j=0;
-	int max_sum = 0;
-
-	//поиск максимальной суммы денег и пары банков
-	for (int i = 0; i < BANK_COUNT; i++)
-	{
-		for (int j = 0; j < BANK_COUNT; j++)
-			if (max_sum_matrix[i][j]>max_sum)
-			{
-				max_sum = max_sum_matrix[i][j];
-				max_i = i;
-				max_j = j;
-			}
-	}
-
-	int bank1 = 0, bank2 = 0;
-	if (distance_matrix[max_i][max_j] < D)
-	{
-		bank1 = bank2 = -1;
-	}
-	else
-	{
-		bank1 = max_i+1;
-		bank2 = max_j+1;
-	}
-	cout << max_sum_matrix[max_i][max_j] << endl;
-	cout << bank1 << "  "<< bank2 << endl;
-
-	system("pause");
-	return 0;
+	fin.close();
 }
-
-void PrintMatrix(int a[BANK_COUNT][BANK_COUNT], int b[BANK_COUNT][BANK_COUNT])
+*/
+void PrintMatrix(int **a, int **b, int n)
 {
-	for (int i = 0; i < BANK_COUNT; i++)
+	for (int i = 0; i < n; i++)
 	{
-		for (int j = 0; j < BANK_COUNT; j++)
+		for (int j = 0; j < n; j++)
 			cout << a[i][j] << ' ';
 		cout << endl;
 	}
 
 	cout << endl;
 
-	for (int i = 0; i < BANK_COUNT; i++)
+	for (int i = 0; i < n; i++)
 	{
-		for (int j = 0; j < BANK_COUNT; j++)
+		for (int j = 0; j < n; j++)
 			cout << b[i][j] << ' ';
 		cout << endl;
 	}
 }
 
-void ParseLine(int lineCount, string fileLine, int &firstNum, int &secondNum)
+void ParseLine(string fileLine, int &firstNum, int &secondNum)
 {
 	bool takeX = true, takeW = false;
 	string firstNumStr = "", secondNumStr = "";
@@ -132,20 +215,13 @@ void ParseLine(int lineCount, string fileLine, int &firstNum, int &secondNum)
 		}
 
 		if (takeX==true)
-		{
 			firstNumStr += fileLine[i];
-		}
+		
 		else if (takeW==true)
-		{
 			secondNumStr += fileLine[i];
-		}
+		
 	}
 
-//	if (lineCount == 1)
-	{
-		//что будет если строка первая
 		firstNum = atoi(firstNumStr.c_str());
 		secondNum = atoi(secondNumStr.c_str());
-	}
-
 }
