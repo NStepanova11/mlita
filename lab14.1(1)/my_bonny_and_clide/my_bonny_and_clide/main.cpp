@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <climits>
 
 const int MAX_BANK_COUNT = 20e5, MIN_BANK_COUNT = 2;
 const int MAX_D = 10e8, MIN_D = 1;
@@ -10,19 +9,12 @@ using namespace std;
 
 void ReadFirstLine(ifstream &fin, int &num1, int &num2);
 void ReadOtherLines(ifstream &fin, int *distances, int *money_count);
-
-//void ReadInputFile(char *fileName, int &dist[BANK_COUNT], int &money_sum[BANK_COUNT]);
 void PrintMatrix(int **a, int **b, int n);
 void ParseLine(string fileLine, int &firstNum, int &secondNum);
-
+void SearchSolution(int **distance_matrix, int **max_sum_matrix, int n, int dist, char *name);
 
 int main(int argc, char *argv[])
 {
-	//int distance[BANK_COUNT] = { 0 };
-	//int money_count[BANK_COUNT] = { 0 };
-	
-
-
 	string inputFileName = argv[1];
 	ifstream fin(inputFileName);
 
@@ -40,8 +32,6 @@ int main(int argc, char *argv[])
 	{
 		cout << pDistances[j] <<"  "<<pMoneyCount[j]<< endl;
 	}
-
-
 
 	//создаются матрицы с расстояниями между парами банков(distance) где расстояние >= допустимого
 	//и матрица общей суммы денег в паре банков
@@ -71,44 +61,12 @@ int main(int argc, char *argv[])
 			}
 		}
 
+	SearchSolution(distance_matrix, max_sum_matrix, n, dd, argv[2]);
+
+
 	//печать матриц денег и расстояний на экран
-		
 	PrintMatrix(distance_matrix, max_sum_matrix, n);
-	/*
-	int max_i = 0, max_j=0;
-	int max_sum = 0;
-
-	//поиск максимальной суммы денег и пары банков
-	for (int i = 0; i < BANK_COUNT; i++)
-	{
-		for (int j = 0; j < BANK_COUNT; j++)
-			if (max_sum_matrix[i][j]>max_sum)
-			{
-				max_sum = max_sum_matrix[i][j];
-				max_i = i;
-				max_j = j;
-			}
-	}
-
-	//результат работы программы: макс сумма и пара банков
-	int bank1 = 0, bank2 = 0;
-	string outputFileName = argv[2];
-	ofstream fout(outputFileName, ios_base::out);
-
-	if (distance_matrix[max_i][max_j] < dd)
-	{
-		bank1 = bank2 = -1;
-	}
-	else
-	{
-		bank1 = max_i+1;
-		bank2 = max_j+1;
-	}
-	fout << max_sum_matrix[max_i][max_j]<<endl;
-	fout << bank1 << "  " << bank2 << endl;
-
-
-	*/
+	
 	system("pause");
 	return 0;
 }
@@ -143,44 +101,7 @@ void ReadOtherLines(ifstream &fin, int *distances, int *money_count)
 	} while (haveLine);
 }
 
-/*
-void ReadInputFile(char *fileName, int &dist[BANK_COUNT], int &money_sum[BANK_COUNT])
-{
-	//чтение данных из файла 
-	
 
-	bool haveLine = false;
-	string line = "";
-	int lineCount = 0;
-	int n = 0, dd = 0, k = 0;
-
-	do
-	{
-		int num1 = 0, num2 = 0;
-		if (getline(fin, line))
-		{
-			haveLine = true;
-			lineCount++;
-			ParseLine(lineCount, line, num1, num2);
-			if (lineCount == 1)
-			{
-				n = num1;
-				dd = num2;
-			}
-			else
-			{
-				dist[k] = num1;
-				money_sum[k] = num2;
-				k++;
-			}
-		}
-		else
-			haveLine = false;
-	} while (haveLine);
-
-	fin.close();
-}
-*/
 void PrintMatrix(int **a, int **b, int n)
 {
 	for (int i = 0; i < n; i++)
@@ -224,4 +145,39 @@ void ParseLine(string fileLine, int &firstNum, int &secondNum)
 
 		firstNum = atoi(firstNumStr.c_str());
 		secondNum = atoi(secondNumStr.c_str());
+}
+
+void SearchSolution(int **distance_matrix, int **max_sum_matrix, int n, int dist, char *name)
+{
+	int max_i = 0, max_j=0;
+	int max_sum = 0;
+
+	//поиск максимальной суммы денег и пары банков
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+			if (max_sum_matrix[i][j]>max_sum)
+			{
+				max_sum = max_sum_matrix[i][j];
+				max_i = i;
+				max_j = j;
+			}
+	}
+
+	//результат работы программы: макс сумма и пара банков
+	int bank1 = 0, bank2 = 0;
+	string outputFileName = name;
+	ofstream fout(outputFileName, ios_base::out);
+
+	if (distance_matrix[max_i][max_j] < dist)
+	{
+		bank1 = bank2 = -1;
+	}
+	else
+	{
+		bank1 = max_i+1;
+		bank2 = max_j+1;
+	}
+	fout << max_sum_matrix[max_i][max_j]<<endl;
+	fout << bank1 << "  " << bank2 << endl;
 }
