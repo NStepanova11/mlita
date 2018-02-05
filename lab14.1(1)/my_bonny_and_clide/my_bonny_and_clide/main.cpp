@@ -1,11 +1,26 @@
+﻿/*
+14.1. Бонни и Клайд (6)
+Бонни и Клайд задумали ограбить в некотором городе два банка. Все N банков в этом городе находятся на его главной улице. Для каждого i-го банка известны расстояние от начала улицы Xi и имеющаяся сумма денег Wi. Чтобы было меньше шума, Бонни и Клайд собираются выбрать такую пару банков, чтобы расстояние между ними было не менее d. Вместе с тем они хотят, чтобы сумма денег в обоих банках оказалась максимальной. Как это сделать?
+Ввод из файла INPUT.TXT. В первой строке указаны  через пробел целые значения N и d - число банков и минимально допустимое расстояние между парой банков, которые можно грабить (2 ≤ N ≤ 2•105, 1 ≤ d ≤ 108). В каждой из следующих N строк содержится через пробел два целых числа Xi и Wi - расстояние от начала улицы до банка и имеющаяся в банке наличность (1 ≤ Xi, Wi ≤ 108). Строки следуют в порядке увеличения расстояний Xi.
+Вывод в файл OUTPUT.TXT. В первой строке вывести сумму денег в выбранных банках. Во второй строке вывести через пробел в любом порядке номера двух требуемых банков. Если имеется несколько решений, вывести любое из них. Если решений нет, вывести строку -1 -1.
+
+Степанова Н ПС-22
+
+Visual studio 2015
+*/
+
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <ctime>
 
 const int MAX_BANK_COUNT = 2*pow(10, 5), MIN_BANK_COUNT = 2;
 const int MAX_D = pow(10,8), MIN_D = 1;
 
 using namespace std;
+
+enum { empty_err = 1, struct_err, content_err, param_err=5, find_err };
+
 
 void ReadFirstLine(ifstream &fin, int &num1, int &num2, bool &haveError, string fileName, int &lineCount);
 void ReadOtherLines(ifstream &fin, int *distances, int *money_count, bool &haveError, int n, string fileName, int &lineCount);
@@ -24,7 +39,7 @@ int main(int argc, char *argv[])
 		ifstream fin(inputFileName);
 		if (fin.is_open())
 		{
-			//��������� ������ ������
+			//обработка первой строки
 			int number1 = 0, number2 = 0, lineCount = 0;
 			ReadFirstLine(fin, number1, number2, haveErrors, inputFileName, lineCount);
 			if (haveErrors == false)
@@ -32,19 +47,20 @@ int main(int argc, char *argv[])
 				int n = number1;
 				int dd = number2;
 
-				//��������� ��������� �����
+				//обработка остальных строк
 				int *pDistances = new int[n];
 				int *pMoneyCount = new int[n];
 				ReadOtherLines(fin, pDistances, pMoneyCount, haveErrors, n, inputFileName, lineCount);
 				if (haveErrors == false)
 				{
-					for (int j = 0; j < n; j++)
+				/*	for (int j = 0; j < n; j++)
 					{
 						cout << pDistances[j] << "  " << pMoneyCount[j] << endl;
 					}
+				*/
 
-					//��������� ������� � ������������ ����� ������ ������(distance) ��� ���������� >= �����������
-					//� ������� ����� ����� ����� � ���� ������
+					//создаются матрицы с расстояниями между парами банков(distance) где расстояние >= допустимого
+					//и матрица общей суммы денег в паре банков
 					int **distance_matrix = new int *[n];
 					int **max_sum_matrix = new int *[n];
 
@@ -74,20 +90,20 @@ int main(int argc, char *argv[])
 					delete pDistances;
 					delete pMoneyCount;
 
-					//����� �������
+					//поиск решения
 					SearchSolution(distance_matrix, max_sum_matrix, n, dd, argv[2]);
 
-					//������ ������ ����� � ���������� �� �����
-					PrintMatrix(distance_matrix, max_sum_matrix, n);
+					//печать матриц денег и расстояний на экран
+					//PrintMatrix(distance_matrix, max_sum_matrix, n);
 				}
 			}
 		}
 		else
-			ErrorMessage(6, inputFileName);
+			ErrorMessage(find_err, inputFileName);
 	}
 	else
-		ErrorMessage(5, "");
-	
+		ErrorMessage(param_err, "");
+
 	system("pause");
 	return 0;
 }
@@ -104,7 +120,7 @@ void ReadFirstLine(ifstream &fin, int &num1, int &num2, bool &haveError, string 
 	}
 	else
 	{
-		ErrorMessage(1, fileName);
+		ErrorMessage(empty_err, fileName);
 		haveError = true;
 	}
 }
@@ -135,7 +151,7 @@ void ReadOtherLines(ifstream &fin, int *distances, int *money_count, bool &haveE
 			else
 			{
 				haveError = true;
-				ErrorMessage(2, fileName);
+				ErrorMessage(struct_err, fileName);
 				break;
 			}
 		}
@@ -182,8 +198,7 @@ void ParseLine(int &firstNum, int &secondNum, string fileLine, bool &haveError, 
 			else
 			{
 				haveError = true;
-				ErrorMessage(2, "");
-				cout << "in parseline" << endl;
+				ErrorMessage(struct_err, "");
 				break;
 			}
 		}
@@ -197,8 +212,7 @@ void ParseLine(int &firstNum, int &secondNum, string fileLine, bool &haveError, 
 			else
 			{
 				haveError = true;
-				ErrorMessage(3, "");
-				cout << "in parseline" << endl;
+				ErrorMessage(content_err, "");
 				break;
 			}
 		}
@@ -209,8 +223,7 @@ void ParseLine(int &firstNum, int &secondNum, string fileLine, bool &haveError, 
 			else
 			{
 				haveError = true;
-				ErrorMessage(3, "");
-				cout << "in parseline" << endl;
+				ErrorMessage(content_err, "");
 				break;
 			}
 		}
@@ -230,7 +243,7 @@ void SearchSolution(int **distance_matrix, int **max_sum_matrix, int n, int dist
 	int max_i = 0, max_j=0;
 	int max_sum = 0;
 
-	//����� ������������ ����� ����� � ���� ������
+	//поиск максимальной суммы денег и пары банков
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < n; j++)
@@ -242,22 +255,25 @@ void SearchSolution(int **distance_matrix, int **max_sum_matrix, int n, int dist
 			}
 	}
 
-	//��������� ������ ���������: ���� ����� � ���� ������
+	//результат работы программы: макс сумма и пара банков
 	int bank1 = 0, bank2 = 0;
 	string outputFileName = name;
 	ofstream fout(outputFileName, ios_base::out);
 
 	if (fout.is_open())
 	{
-		if (distance_matrix[max_i][max_j] < dist)
+	/*	if (distance_matrix[max_i][max_j] < dist)
 		{
 			bank1 = bank2 = -1;
 		}
-		else
+		else*/
+		if (distance_matrix[max_i][max_j] >= dist)
 		{
 			bank1 = max_i + 1;
 			bank2 = max_j + 1;
 		}
+		else 
+			bank1 = bank2 = -1;
 		if (max_sum > 0)
 			fout << max_sum << endl;
 		fout << bank1 << "  " << bank2 << endl;
@@ -265,7 +281,7 @@ void SearchSolution(int **distance_matrix, int **max_sum_matrix, int n, int dist
 		fout.close();
 	}
 	else
-		ErrorMessage(3, name);
+		ErrorMessage(content_err, name);
 }
 
 void ErrorMessage(int code, string fileName)
@@ -311,8 +327,7 @@ void ValueVerification(int resultNum1, int resultNum2, int &firstNum, int &secon
 		}
 		else
 		{
-			ErrorMessage(3, "");
-			cout << "in parseline" << endl;
+			ErrorMessage(content_err, "");
 			haveError = true;
 		}
 	}
@@ -325,8 +340,7 @@ void ValueVerification(int resultNum1, int resultNum2, int &firstNum, int &secon
 		}
 		else
 		{
-			ErrorMessage(3, "");
-			cout << "in parseline" << endl;
+			ErrorMessage(content_err, "");
 			haveError = true;
 		}
 	}
